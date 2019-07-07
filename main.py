@@ -1,4 +1,6 @@
-from game import board, pieces
+import sys
+from game.chess import Chess
 
 if __name__ == '__main__':
-    print('chess')
+    game = Chess()
+    sys.exit(game.play())

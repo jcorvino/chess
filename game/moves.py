@@ -1,5 +1,6 @@
 #TODO: Move to "chess" module
 
+
 class Moves:
     """
     Class to hold all common and special chess moves.

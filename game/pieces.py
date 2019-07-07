@@ -1,23 +1,45 @@
-from abc import ABC, abstractmethod
 import re
 
 
-class AbstractGamePiece(ABC):
+class GamePiece:
     """
     Game piece class.
 
     Base class for all chess pieces.
     """
+    names = (
+        'king',
+        'queen',
+        'rook',
+        'bishop',
+        'knight',
+        'pawn',
+    )
+
+    colors = (
+        'black',
+        'white',
+    )
 
     def __init__(self, name, color, location):
-        self._name = name
-        self._color = color
-        self._location = location
+        self._name = None
+        self._color = None
+        self._location = None
+
+        self.name = name
+        self.color = color
+        self.location = location
         self.has_moved = False
 
     @property
     def name(self):
         return self._name
+
+    @name.setter
+    def name(self, val):
+        if val not in self.names:
+            raise ValueError('Invalid game piece name: \'%s\'' % str(val))
+        self._name = val
 
     @property
     def color(self):
@@ -25,9 +47,9 @@ class AbstractGamePiece(ABC):
 
     @color.setter
     def color(self, val):
-        if val.lower() not in ['black', 'white']:
-            raise ValueError('Game piece color must be black or white not \'%s\'' % val)
-        self._color = val.lower()
+        if val not in self.colors:
+            raise ValueError('Game piece color must be black or white not \'%s\'' % str(val))
+        self._color = val
 
     @property
     def location(self):
@@ -39,28 +61,34 @@ class AbstractGamePiece(ABC):
             self._location = val
             self.has_moved = True
         else:
-            raise ValueError('Game piece moved to an invalid location: \'%s\'' % val)
-
-    @property
-    @abstractmethod
-    def moves(self):
-        pass  # TODO: Move "moves" functionality to separate module?
+            raise ValueError('Game piece moved to an invalid location: \'%s\'' % str(val))
 
 
-class King(AbstractGamePiece):
-    """
-    The King.
-    """
+class King(GamePiece):
     def __init__(self, color, location):
         super().__init__('king', color, location)
 
-    def moves(self):
-        return 'one'
+
+class Queen(GamePiece):
+    def __init__(self, color, location):
+        super().__init__('queen', color, location)
 
 
-if __name__ == '__main__':
-    king = King('white', 'D1')
-    print(king.color)
-    print(king.name)
-    print(king.moves)
-    print(king.location)
+class Rook(GamePiece):
+    def __init__(self, color, location):
+        super().__init__('rook', color, location)
+
+
+class Bishop(GamePiece):
+    def __init__(self, color, location):
+        super().__init__('bishop', color, location)
+
+
+class Knight(GamePiece):
+    def __init__(self, color, location):
+        super().__init__('knight', color, location)
+
+
+class Pawn(GamePiece):
+    def __init__(self, color, location):
+        super().__init__('pawn', color, location)
