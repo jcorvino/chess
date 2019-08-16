@@ -1,7 +1,7 @@
 from game.pieces import King, Queen, Rook, Bishop, Knight, Pawn
 
 
-class Moves:
+class GameMoves:
     """
     Class to determine which moves are allowed and to move pieces.
     """
@@ -12,17 +12,16 @@ class Moves:
         Gets the allowed moves for a piece in the specified location.
         Note that a piece cannot move to its current position.
         """
-        print(location)
         # convert to upper case if user forgot
         location = location.upper()
 
         move_funcs = {
-            King: Moves._king_moves,
-            Queen: Moves._queen_moves,
-            Rook: Moves._rook_moves,
-            Bishop: Moves._bishop_moves,
-            Knight: Moves._knight_moves,
-            Pawn: Moves._pawn_moves,
+            King: GameMoves._king_moves,
+            Queen: GameMoves._queen_moves,
+            Rook: GameMoves._rook_moves,
+            Bishop: GameMoves._bishop_moves,
+            Knight: GameMoves._knight_moves,
+            Pawn: GameMoves._pawn_moves,
         }
 
         piece = gameboard.board[location]
@@ -31,7 +30,7 @@ class Moves:
             return list()
         else:
             move_func = move_funcs[type(piece)]
-            print(piece)
+            print(piece, location)
             return move_func(gameboard, piece, location)
 
     @staticmethod
@@ -44,11 +43,11 @@ class Moves:
         for enemy_location, enemy_piece in gameboard.board.items():
             if enemy_piece is not None and enemy_piece.color == enemy_color:
                 if isinstance(enemy_piece, King):
-                    enemy_moves = Moves._enemy_king_moves(gameboard, enemy_piece, enemy_location)
+                    enemy_moves = GameMoves._enemy_king_moves(gameboard, enemy_piece, enemy_location)
                 elif isinstance(enemy_piece, Pawn):
-                    enemy_moves = Moves._pawn_attack_moves(gameboard, enemy_piece, enemy_location)
+                    enemy_moves = GameMoves._pawn_attack_moves(gameboard, enemy_piece, enemy_location)
                 else:
-                    enemy_moves = Moves.get_moves(gameboard, enemy_location)
+                    enemy_moves = GameMoves.get_moves(gameboard, enemy_location)
                 all_enemy_moves.extend(enemy_moves)
         return all_enemy_moves
 
@@ -96,7 +95,7 @@ class Moves:
 
         # determine all places the enemy can attack
         enemy_color = 'black' if piece.color == 'white' else 'white'
-        all_enemy_moves = Moves.get_enemy_moves(gameboard, enemy_color)
+        all_enemy_moves = GameMoves.get_enemy_moves(gameboard, enemy_color)
 
         # determine the valid moves
         moves = list()
@@ -138,7 +137,34 @@ class Moves:
 
     @staticmethod
     def _knight_moves(gameboard, piece, location):
-        return list()
+        """
+        Moves allowed by a knight.
+        """
+        # knight's current location
+        col = ord(location[0])
+        row = int(location[1])
+
+        moves = list()
+
+        # possible moves
+        moves.append('%c%s' % (col - 1, row + 2))  # upper left
+        moves.append('%c%s' % (col + 1, row + 2))  # upper right
+        moves.append('%c%s' % (col + 2, row + 1))  # right upper
+        moves.append('%c%s' % (col + 2, row - 1))  # right lower
+        moves.append('%c%s' % (col + 1, row - 2))  # lower right
+        moves.append('%c%s' % (col - 1, row - 2))  # lower left
+        moves.append('%c%s' % (col - 2, row - 1))  # left lower
+        moves.append('%c%s' % (col - 2, row + 1))  # left upper
+
+        # verify possible move is on the board and not occupied by friendly piece
+        for location in moves.copy():
+            if location not in gameboard.board.keys():
+                moves.remove(location)
+
+            elif gameboard.board[location] is not None and gameboard.board[location].color == piece.color:
+                moves.remove(location)
+
+        return moves
 
     @staticmethod
     def _pawn_moves(gameboard, piece, location):
@@ -167,7 +193,7 @@ class Moves:
                     moves.append(new_location)
 
         # check attacks
-        moves.extend(Moves._pawn_attack_moves(gameboard, piece, location))
+        moves.extend(GameMoves._pawn_attack_moves(gameboard, piece, location))
         return moves
 
     @staticmethod
@@ -188,8 +214,9 @@ class Moves:
         # check attacks
         attack_cols = [chr(ord(col) - 1), chr(ord(col) + 1)]
         attack_row = str(int(row) + direction)
-        attack_locations = [attack_col + attack_row for attack_col in attack_cols]
-        for new_location in attack_locations:
+        locations_to_check = [attack_col + attack_row for attack_col in attack_cols]
+        #TODO: Check for en passant
+        for new_location in locations_to_check:
             try:
                 gameboard.board[new_location]
             except KeyError:
@@ -204,4 +231,4 @@ if __name__ == '__main__':
     from game.board import GameBoard
     gb = GameBoard()
     print(gb.board.keys())
-    print(Moves.get_moves(gb, 'B7'))
+    print(GameMoves.get_moves(gb, 'H1'))
