@@ -215,7 +215,7 @@ class GameMoves:
         attack_cols = [chr(ord(col) - 1), chr(ord(col) + 1)]
         attack_row = str(int(row) + direction)
         locations_to_check = [attack_col + attack_row for attack_col in attack_cols]
-        #TODO: Check for en passant
+
         for new_location in locations_to_check:
             try:
                 gameboard.board[new_location]
@@ -223,6 +223,9 @@ class GameMoves:
                 pass  # left side attack is off the board
             else:
                 if gameboard.board[new_location] is not None and gameboard.board[new_location].color != piece.color:
+                    moves.append(new_location)
+                elif new_location == gameboard.board.en_passant:
+                    # checks en passant
                     moves.append(new_location)
         return moves
 

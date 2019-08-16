@@ -72,6 +72,7 @@ class GameBoard:
         self.board = BoardDict()  # empty board
         self.history = list()  # list of all past moves
         self.turn = turn
+        self.en_passant = None  # location of possible en passant attack.
 
         # Populate pieces on the game board
         for color in self.initial_positions.keys():
