@@ -23,8 +23,18 @@ class BoardDict(dict):
         Prevent user from modifying keys
         """
         if not re.match('[A-H][1-8]', key):
-            raise KeyError(f'Board can only have positions A1-H8, not {key}')
+            raise KeyError(f'Invalid chess board position: {key}')
         super().__setitem__(key, value)
+
+    def __getitem__(self, item):
+        """
+        Prevent user from accessing locations off the game board
+        """
+        # print(item)
+        # print(dict.__getitem__(self, item))
+        if not re.match('[A-H][1-8]', item):
+            raise KeyError(f'Invalid chess board position: {item}')
+        return super().__getitem__(item)
 
 
 class GameBoard:
@@ -55,12 +65,13 @@ class GameBoard:
         }
     }
 
-    def __init__(self):
+    def __init__(self, turn='white'):
         """
         Create starting game board
         """
         self.board = BoardDict()  # empty board
         self.history = list()  # list of all past moves
+        self.turn = turn
 
         # Populate pieces on the game board
         for color in self.initial_positions.keys():
@@ -68,38 +79,7 @@ class GameBoard:
                 for location in locations:
                     self.board[location] = piece_type(color)
 
-    def get_moves(self, location):
-        """
-        Gets the allowed moves for a piece in the specified location
-        """
-        move_funcs = {
-            King: self._king_moves,
-            # Queen: ('D1',),
-            # Rook: ('A1', 'H1',),
-            # Bishop: ('C1', 'F1',),
-            # Knight: ('B1', 'G1',),
-            # Pawn: (i + '2' for i in cols),
-        }
-
-        piece = self.board[location]
-
-        if piece is None:
-            return list()
-        else:
-            func = move_funcs[type(piece)]
-            return func(piece, location)
-
-    def _king_moves(self, piece, location):
-        """
-        Moves allowed by the king
-        """
-        col = location[0]
-        row = location[1]
-
-        return list()
-
 
 if __name__ == '__main__':
-    print('test')
     mygb = GameBoard()
     print(mygb.board)

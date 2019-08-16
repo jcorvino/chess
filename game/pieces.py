@@ -18,16 +18,20 @@ class GamePiece:
         'white',
     )
 
-    def __init__(self, name, color):
+    def __init__(self, name, color, has_moved=False):
         self._name = None
         self._color = None
 
         self.name = name
         self.color = color
-        self.has_moved = False
+        self.has_moved = has_moved
 
     def __repr__(self):
-        return type(self).__name__ + '(\'' + str(self.color) + '\')'
+        if self.has_moved:
+            arguments = f'\'{self.color}\', has_moved={self.has_moved}'
+        else:
+            arguments = f'\'{self.color}\''
+        return type(self).__name__ + f'({arguments})'
 
     @property
     def name(self):
@@ -36,7 +40,7 @@ class GamePiece:
     @name.setter
     def name(self, val):
         if val not in self.names:
-            raise ValueError('Invalid game piece name: \'%s\'' % str(val))
+            raise ValueError('Invalid game piece name: \'%s\'' % val)
         self._name = val
 
     @property
@@ -46,35 +50,35 @@ class GamePiece:
     @color.setter
     def color(self, val):
         if val not in self.colors:
-            raise ValueError('Game piece color must be black or white not \'%s\'' % str(val))
+            raise ValueError('Game piece color must be black or white not \'%s\'' % val)
         self._color = val
 
 
 class King(GamePiece):
-    def __init__(self, color):
-        super().__init__('king', color)
+    def __init__(self, *args, **kwargs):
+        super().__init__('king', *args, **kwargs)
 
 
 class Queen(GamePiece):
-    def __init__(self, color):
-        super().__init__('queen', color)
+    def __init__(self, *args, **kwargs):
+        super().__init__('queen', *args, **kwargs)
 
 
 class Rook(GamePiece):
-    def __init__(self, color):
-        super().__init__('rook', color)
+    def __init__(self, *args, **kwargs):
+        super().__init__('rook', *args, **kwargs)
 
 
 class Bishop(GamePiece):
-    def __init__(self, color):
-        super().__init__('bishop', color)
+    def __init__(self, *args, **kwargs):
+        super().__init__('bishop', *args, **kwargs)
 
 
 class Knight(GamePiece):
-    def __init__(self, color):
-        super().__init__('knight', color)
+    def __init__(self, *args, **kwargs):
+        super().__init__('knight', *args, **kwargs)
 
 
 class Pawn(GamePiece):
-    def __init__(self, color):
-        super().__init__('pawn', color)
+    def __init__(self, *args, **kwargs):
+        super().__init__('pawn', *args, **kwargs)
