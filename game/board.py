@@ -30,8 +30,6 @@ class BoardDict(dict):
         """
         Prevent user from accessing locations off the game board
         """
-        # print(item)
-        # print(dict.__getitem__(self, item))
         if not re.match('[A-H][1-8]', item):
             raise KeyError(f'Invalid chess board position: {item}')
         return super().__getitem__(item)
