@@ -1,6 +1,5 @@
 import unittest
-from game.moves import GameMoves
-from game.board import GameBoard
+from src.chess.board import GameBoard
 
 
 class TestGameMoves(unittest.TestCase):

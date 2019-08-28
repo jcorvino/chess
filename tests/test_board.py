@@ -1,5 +1,5 @@
 import unittest
-from game.board import GameBoard
+from src.chess.board import GameBoard
 
 
 class TestGameBoard(unittest.TestCase):

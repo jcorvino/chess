@@ -1,5 +1,5 @@
 import sys
-from game.chess import Chess
+from .chess import Chess
 
 
 if __name__ == '__main__':
