@@ -10,4 +10,3 @@ class Chess:
 
     def play(self):
         print('Let\'s play a game of chess!')
-        print(list(map(lambda x: (x.color + '-' + x.name, x.location), self.board.pieces)))
