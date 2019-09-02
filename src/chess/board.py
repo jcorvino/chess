@@ -77,8 +77,3 @@ class GameBoard(dict):
         if not re.match('[A-H][1-8]', item):
             raise KeyError(f'Invalid chess board position: {item}')
         return super().__getitem__(item)
-
-
-if __name__ == '__main__':
-    mygb = GameBoard()
-    print(mygb)

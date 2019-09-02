@@ -7,33 +7,33 @@ class GameMoves:
     """
 
     @staticmethod
-    def move(gameboard, location, new_location):
+    def move(board, location, new_location):
         """
-        Move a piece on the gameboard from location to new_location
+        Move a piece on the board from location to new_location
         """
         # convert to upper case if user forgot
         new_location = new_location.upper()
         location = location.upper()
 
         # check if valid game piece
-        piece = gameboard[location]
+        piece = board[location]
         if piece is None:
             raise ValueError(f'No piece at {location}')
 
         # check if correct color
-        if piece.color != gameboard.turn:
+        if piece.color != board.turn:
             raise ValueError(f'Cannot move piece at {location}! It is not {piece.color}\'s turn')
 
         # check allowed moves
-        valid_moves = GameMoves.get_moves(gameboard, location)
+        valid_moves = GameMoves.get_moves(board, location)
         if new_location not in valid_moves:
             raise ValueError(f'Moving {piece.name} to {new_location} is not a valid move. Check get_moves function.')
 
         # TODO: check castling
 
         # update board
-        gameboard[location] = None
-        gameboard[new_location] = piece
+        board[location] = None
+        board[new_location] = piece
         piece.has_moved = True
 
         # update en-passant
@@ -41,21 +41,21 @@ class GameMoves:
         old_row = int(location[1])
         if isinstance(piece, Pawn) and abs(new_row - old_row) == 2:
             # possible location of en-passant attacks
-            gameboard.en_passant = location[0] + str(old_row + (new_row - old_row) // 2)
+            board.en_passant = location[0] + str(old_row + (new_row - old_row) // 2)
         else:
-            gameboard.en_passant = None
+            board.en_passant = None
 
-        # update gameboard history
-        gameboard.history.append(f'Moved {piece.color} {piece.name} from {location} to {new_location}.')
+        # update board history
+        board.history.append(f'Moved {piece.color} {piece.name} from {location} to {new_location}.')
 
         # update turn
-        if gameboard.turn == 'white':
-            gameboard.turn = 'black'
+        if board.turn == 'white':
+            board.turn = 'black'
         else:
-            gameboard.turn = 'white'
+            board.turn = 'white'
 
     @staticmethod
-    def get_moves(gameboard, location):
+    def get_moves(board, location):
         """
         Gets the allowed moves for a piece in the specified location.
         Note that a piece cannot move to its current position.
@@ -72,34 +72,34 @@ class GameMoves:
             Pawn: GameMoves._pawn_moves,
         }
 
-        piece = gameboard[location]
+        piece = board[location]
 
         if piece is None:
             return list()
         else:
             move_func = move_funcs[type(piece)]
-            return move_func(gameboard, piece, location)
+            return move_func(board, piece, location)
 
     @staticmethod
-    def get_enemy_moves(gameboard, enemy_color):
+    def get_enemy_moves(board, enemy_color):
         """
         Returns all possible moves allowed by an enemy piece.
         """
         # determine all places the enemy can attack
         all_enemy_moves = list()
-        for enemy_location, enemy_piece in gameboard.items():
+        for enemy_location, enemy_piece in board.items():
             if enemy_piece is not None and enemy_piece.color == enemy_color:
                 if isinstance(enemy_piece, King):
-                    enemy_moves = GameMoves._enemy_king_moves(gameboard, enemy_piece, enemy_location)
+                    enemy_moves = GameMoves._enemy_king_moves(board, enemy_location)
                 elif isinstance(enemy_piece, Pawn):
-                    enemy_moves = GameMoves._pawn_attack_moves(gameboard, enemy_piece, enemy_location)
+                    enemy_moves = GameMoves._pawn_attack_moves(board, enemy_piece, enemy_location)
                 else:
-                    enemy_moves = GameMoves.get_moves(gameboard, enemy_location)
+                    enemy_moves = GameMoves.get_moves(board, enemy_location)
                 all_enemy_moves.extend(enemy_moves)
         return all_enemy_moves
 
     @staticmethod
-    def _enemy_king_moves(gameboard, piece, location):
+    def _enemy_king_moves(board, location):
         """
         Simple check of where the enemy king can move.
 
@@ -119,7 +119,7 @@ class GameMoves:
         moves = list()
         for new_location in locations_to_check:
             try:
-                gameboard[new_location]
+                board[new_location]
             except KeyError:  # new_location is out of range of the board
                 continue
             else:
@@ -127,7 +127,7 @@ class GameMoves:
         return moves
 
     @staticmethod
-    def _king_moves(gameboard, piece, location):
+    def _king_moves(board, piece, location):
         """
         Moves allowed by the king
         """
@@ -142,47 +142,47 @@ class GameMoves:
 
         # determine all places the enemy can attack
         enemy_color = 'black' if piece.color == 'white' else 'white'
-        all_enemy_moves = GameMoves.get_enemy_moves(gameboard, enemy_color)
+        all_enemy_moves = GameMoves.get_enemy_moves(board, enemy_color)
 
         # determine the valid moves
         moves = list()
         for new_location in locations_to_check:
             try:
-                gameboard[new_location]
+                board[new_location]
             except KeyError:  # new_location is out of range of the board
                 continue
 
             if new_location not in all_enemy_moves:
                 # new_location must not be attackable by enemy
-                if gameboard[new_location] is None or gameboard[new_location].color != piece.color:
+                if board[new_location] is None or board[new_location].color != piece.color:
                     # new_location must either be empty or occupied by enemy
                     moves.append(new_location)
 
         # TODO: Check for castling
         # if piece.color == 'white' and not piece.has_moved:  # check if white king can castle
-        #     if gameboard['A1'] is not None and not gameboard['A1'].has_moved:
+        #     if board['A1'] is not None and not board['A1'].has_moved:
         #         # rook in A1 that hasn't moved
         #         if 'A3' not in all_enemy_moves and 'A4' not in all_enemy_moves:
         #             # king cannot be in check
         #             moves.append('A3')
-        #     if gameboard['A8']
+        #     if board['A8']
         # elif piece.color == 'black' and not piece.has_moved:  # check if black king can castle
         #     pass
         return moves
 
     @staticmethod
-    def _queen_moves(gameboard, piece, location):
+    def _queen_moves(board, piece, location):
         """
         Moves allowed by a queen
         """
-        rook_moves = GameMoves._rook_moves(gameboard, piece, location)
-        bishop_moves = GameMoves._bishop_moves(gameboard, piece, location)
+        rook_moves = GameMoves._rook_moves(board, piece, location)
+        bishop_moves = GameMoves._bishop_moves(board, piece, location)
         queen_moves = list(set(rook_moves + bishop_moves))
 
         return queen_moves
 
     @staticmethod
-    def _rook_moves(gameboard, piece, location):
+    def _rook_moves(board, piece, location):
         """
         Moves allowed by a rook
         """
@@ -201,9 +201,9 @@ class GameMoves:
         for direction, move_rook in directions_to_check.items():
             for i in range(1, 8):  # a rook can move between 1 and 7 spaces at most
                 new_location = move_rook(i)
-                if new_location in gameboard.keys() and gameboard[new_location] is None:
+                if new_location in board.keys() and board[new_location] is None:
                     moves.append(new_location)
-                elif new_location in gameboard.keys() and gameboard[new_location].color != piece.color:
+                elif new_location in board.keys() and board[new_location].color != piece.color:
                     moves.append(new_location)
                     break
                 else:
@@ -212,7 +212,7 @@ class GameMoves:
         return moves
 
     @staticmethod
-    def _bishop_moves(gameboard, piece, location):
+    def _bishop_moves(board, piece, location):
         """
         Moves allowed by a bishop
         """
@@ -231,9 +231,9 @@ class GameMoves:
         for direction, move_bishop in directions_to_check.items():
             for i in range(1, 8):  # a bishop can move between 1 and 7 spaces at most
                 new_location = move_bishop(i)
-                if new_location in gameboard.keys() and gameboard[new_location] is None:
+                if new_location in board.keys() and board[new_location] is None:
                     moves.append(new_location)
-                elif new_location in gameboard.keys() and gameboard[new_location].color != piece.color:
+                elif new_location in board.keys() and board[new_location].color != piece.color:
                     moves.append(new_location)
                     break
                 else:
@@ -242,7 +242,7 @@ class GameMoves:
         return moves
 
     @staticmethod
-    def _knight_moves(gameboard, piece, location):
+    def _knight_moves(board, piece, location):
         """
         Moves allowed by a knight.
         """
@@ -264,15 +264,15 @@ class GameMoves:
 
         # verify possible move is on the board and not occupied by friendly piece
         for location in moves.copy():
-            if location not in gameboard.keys():
+            if location not in board.keys():
                 moves.remove(location)
-            elif gameboard[location] is not None and gameboard[location].color == piece.color:
+            elif board[location] is not None and board[location].color == piece.color:
                 moves.remove(location)
 
         return moves
 
     @staticmethod
-    def _pawn_moves(gameboard, piece, location):
+    def _pawn_moves(board, piece, location):
         """
         Moves allowed by a pawn
         """
@@ -288,21 +288,21 @@ class GameMoves:
 
         # check moving forward 1 space
         new_location = col + str(int(row) + direction)
-        if gameboard[new_location] is None:
+        if board[new_location] is None:
             moves.append(new_location)
 
             # check moving forward 2 spaces
             if not piece.has_moved:
                 new_location = col + str(int(row) + 2 * direction)
-                if gameboard[new_location] is None:
+                if board[new_location] is None:
                     moves.append(new_location)
 
         # check attacks
-        moves.extend(GameMoves._pawn_attack_moves(gameboard, piece, location))
+        moves.extend(GameMoves._pawn_attack_moves(board, piece, location))
         return moves
 
     @staticmethod
-    def _pawn_attack_moves(gameboard, piece, location):
+    def _pawn_attack_moves(board, piece, location):
         """
         Attack moves allowed by a pawn.
         """
@@ -323,38 +323,13 @@ class GameMoves:
 
         for new_location in locations_to_check:
             try:
-                gameboard[new_location]
+                board[new_location]
             except KeyError:
                 pass  # left side attack is off the board
             else:
-                if gameboard[new_location] is not None and gameboard[new_location].color != piece.color:
+                if board[new_location] is not None and board[new_location].color != piece.color:
                     moves.append(new_location)
-                elif new_location == gameboard.en_passant:
+                elif new_location == board.en_passant:
                     # checks en passant
                     moves.append(new_location)
         return moves
-
-
-if __name__ == '__main__':
-    from pprint import pprint
-    from src.chess.board import GameBoard
-    gb = GameBoard()
-    # pprint(gb)
-    gb['G2'] = None
-    gb['E2'] = None
-    gb['C2'] = None
-    print(GameMoves.get_moves(gb, 'D2'))
-    GameMoves.move(gb, 'D2', 'D4')
-    print(gb.en_passant)
-    gb.turn = 'white'
-    GameMoves.move(gb, 'D4', 'D5')
-    print(GameMoves.get_moves(gb, 'D5'))
-    print(gb.en_passant)
-    print(gb.history)
-    print(GameMoves.get_moves(gb, 'E7'))
-    GameMoves.move(gb, 'E7', 'E5')
-    print(gb.en_passant)
-    print(GameMoves.get_moves(gb, 'D5'))
-
-    pprint(gb)
-

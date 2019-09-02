@@ -11,7 +11,7 @@ requires = [
 setup(
     name='chess',
     version='1.0',
-    description='A simple chess game',
+    description='A simple chess game engine',
     long_description=readme,
     author='Joe Corvino',
     url='https://github.com/jcorvino/chess',
@@ -20,5 +20,5 @@ setup(
     package_dir={'': 'src'},
     include_package_data=False,
     install_requires=requires,
-    license='GNU GPL v3',
+    license='GNU GPL 3.0',
 )

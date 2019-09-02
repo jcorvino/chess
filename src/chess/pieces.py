@@ -56,29 +56,35 @@ class GamePiece:
 
 class King(GamePiece):
     def __init__(self, *args, **kwargs):
+        self.character = 'K'
         super().__init__('king', *args, **kwargs)
 
 
 class Queen(GamePiece):
     def __init__(self, *args, **kwargs):
+        self.character = 'Q'
         super().__init__('queen', *args, **kwargs)
 
 
 class Rook(GamePiece):
     def __init__(self, *args, **kwargs):
+        self.character = 'R'
         super().__init__('rook', *args, **kwargs)
 
 
 class Bishop(GamePiece):
     def __init__(self, *args, **kwargs):
+        self.character = 'B'
         super().__init__('bishop', *args, **kwargs)
 
 
 class Knight(GamePiece):
     def __init__(self, *args, **kwargs):
+        self.character = 'N'
         super().__init__('knight', *args, **kwargs)
 
 
 class Pawn(GamePiece):
     def __init__(self, *args, **kwargs):
+        self.character = 'P'
         super().__init__('pawn', *args, **kwargs)

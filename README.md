@@ -1,4 +1,2 @@
 # chess
-Basic chess game
-
-
+Basic chess game.
