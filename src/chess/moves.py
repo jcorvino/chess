@@ -30,6 +30,7 @@ class GameMoves:
             raise ValueError(f'Moving {piece.name} to {new_location} is not a valid move. Check get_moves function.')
 
         # TODO: check castling
+        # TODO: check for check
 
         # update board
         board[location] = None
@@ -49,10 +50,7 @@ class GameMoves:
         board.history.append(f'Moved {piece.color} {piece.name} from {location} to {new_location}.')
 
         # update turn
-        if board.turn == 'white':
-            board.turn = 'black'
-        else:
-            board.turn = 'white'
+        board.turn = 'black' if board.turn == 'white' else 'white'
 
     @staticmethod
     def get_moves(board, location):
@@ -60,6 +58,7 @@ class GameMoves:
         Gets the allowed moves for a piece in the specified location.
         Note that a piece cannot move to its current position.
         """
+        # TODO: Check for check
         # convert to upper case if user forgot
         location = location.upper()
 
@@ -159,6 +158,13 @@ class GameMoves:
                     moves.append(new_location)
 
         # TODO: Check for castling
+        # TODO: determine if king is in check
+        if not piece.has_moved:
+            left_rook = board['A' + str(row)]
+            right_rook = board['H' + str(row)]
+        if left_rook is not None and left_rook.color == piece.color and left_rook.has_moved is False:
+            # rook can castle
+            pass
         # if piece.color == 'white' and not piece.has_moved:  # check if white king can castle
         #     if board['A1'] is not None and not board['A1'].has_moved:
         #         # rook in A1 that hasn't moved

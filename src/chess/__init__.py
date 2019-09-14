@@ -2,7 +2,7 @@
 Chess
 """
 from .board import GameBoard
-from .chess import Chess
+from .cli import Chess
 from .moves import GameMoves
 from .pieces import King, Queen, Rook, Bishop, Knight, Pawn
 
