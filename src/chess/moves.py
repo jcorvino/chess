@@ -161,7 +161,7 @@ class GameMoves:
         # TODO: determine if king is in check
         if not piece.has_moved:
             left_rook = board['A' + str(row)]
-            right_rook = board['H' + str(row)]
+            # right_rook = board['H' + str(row)]
         if left_rook is not None and left_rook.color == piece.color and left_rook.has_moved is False:
             # rook can castle
             pass
