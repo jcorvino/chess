@@ -10,4 +10,9 @@ run the following command:
 ```
 python setup.py install
 ```
+alternatively, you can install the package via pip using this command:
+```
+pip install git+https://github.com/jcorvino/chess
+```
+
 
