@@ -1,4 +1,5 @@
-from .pieces import King, Queen, Rook, Bishop, Knight, Pawn
+from .pieces import King, Queen, Rook, Bishop, Knight, Pawn, GamePiece
+from .board import GameBoard, Location, Locations, Color
 
 
 class GameMoves:
@@ -7,25 +8,25 @@ class GameMoves:
     """
 
     @staticmethod
-    def move(board, location, new_location):
+    def move(board: GameBoard, old_location: Location, new_location: Location) -> None:
         """
-        Move a piece on the board from location to new_location
+        Move a piece on the board from old_location to new_location
         """
         # convert to upper case if user forgot
         new_location = new_location.upper()
-        location = location.upper()
+        old_location = old_location.upper()
 
         # check if valid game piece
-        piece = board[location]
+        piece = board[old_location]
         if piece is None:
-            raise ValueError(f'No piece at {location}')
+            raise ValueError(f'No piece at {old_location}')
 
         # check if correct color
         if piece.color != board.turn:
-            raise ValueError(f'Cannot move piece at {location}! It is not {piece.color}\'s turn')
+            raise ValueError(f'Cannot move piece at {old_location}! It is not {piece.color}\'s turn')
 
         # check allowed moves
-        valid_moves = GameMoves.get_moves(board, location)
+        valid_moves = GameMoves.get_moves(board, old_location)
         if new_location not in valid_moves:
             raise ValueError(f'Moving {piece.name} to {new_location} is not a valid move. Check get_moves function.')
 
@@ -33,27 +34,34 @@ class GameMoves:
         # TODO: check for check
 
         # update board
-        board[location] = None
+        board[old_location] = None
         board[new_location] = piece
         piece.has_moved = True
 
         # update en-passant
         new_row = int(new_location[1])
-        old_row = int(location[1])
+        old_row = int(old_location[1])
         if isinstance(piece, Pawn) and abs(new_row - old_row) == 2:
             # possible location of en-passant attacks
-            board.en_passant = location[0] + str(old_row + (new_row - old_row) // 2)
+            board.en_passant = old_location[0] + str(old_row + (new_row - old_row) // 2)
         else:
             board.en_passant = None
 
         # update board history
-        board.history.append(f'Moved {piece.color} {piece.name} from {location} to {new_location}.')
+        board.history.append(f'Moved {piece.color} {piece.name} from {old_location} to {new_location}.')
 
         # update turn
         board.turn = 'black' if board.turn == 'white' else 'white'
 
     @staticmethod
-    def get_moves(board, location):
+    def in_check(board: GameBoard, color: Color) -> bool:
+        """
+        Check if the specified color is in check
+        """
+        return False
+
+    @staticmethod
+    def get_moves(board: GameBoard, location: Location) -> Locations:
         """
         Gets the allowed moves for a piece in the specified location.
         Note that a piece cannot move to its current position.
@@ -74,33 +82,50 @@ class GameMoves:
         piece = board[location]
 
         if piece is None:
-            return list()
+            return set()
         else:
             move_func = move_funcs[type(piece)]
             return move_func(board, piece, location)
 
     @staticmethod
-    def get_enemy_moves(board, enemy_color):
+    def get_all_attacks(board: GameBoard, color: Color, simple_king: bool = False) -> Locations:
         """
-        Returns all possible moves allowed by an enemy piece.
+        Returns all possible attacks allowed by the specified color.
         """
-        # determine all places the enemy can attack
-        all_enemy_moves = list()
-        for enemy_location, enemy_piece in board.items():
-            if enemy_piece is not None and enemy_piece.color == enemy_color:
-                if isinstance(enemy_piece, King):
-                    enemy_moves = GameMoves._enemy_king_moves(board, enemy_location)
-                elif isinstance(enemy_piece, Pawn):
-                    enemy_moves = GameMoves._pawn_attack_moves(board, enemy_piece, enemy_location)
+        # determine all places the player can attack
+        all_attacks = set()
+        for location, piece in board.items():
+            if piece and piece.color == color:
+                if isinstance(piece, King):
+                    if simple_king:
+                        attacks = GameMoves._simple_king_moves(board, location)
+                    else:
+                        attacks = GameMoves._king_moves(board, location)
+                elif isinstance(piece, Pawn):
+                    attacks = GameMoves._pawn_attack_moves(board, piece, location)
                 else:
-                    enemy_moves = GameMoves.get_moves(board, enemy_location)
-                all_enemy_moves.extend(enemy_moves)
-        return all_enemy_moves
+                    attacks = GameMoves.get_moves(board, location)
+                all_attacks.update(attacks)
+        return all_attacks
 
     @staticmethod
-    def _enemy_king_moves(board, location):
+    def get_all_moves(board: GameBoard, color: Color) -> Locations:
         """
-        Simple check of where the enemy king can move.
+        Returns all possible moves allowed by the specified color.
+        """
+        all_moves = GameMoves.get_all_attacks(board, color)
+
+        # Add pawn moves that are not attacks
+        for location, piece in board.items():
+            if piece and piece.color == color:
+                if isinstance(piece, Pawn):
+                    all_moves.update(GameMoves._pawn_attack_moves(board, piece, location))
+        return all_moves
+
+    @staticmethod
+    def _simple_king_moves(board: GameBoard, location: Location) -> Locations:
+        """
+        Simple check of where the king can move.
 
         Note: Designed to avoid infinite recursion when friendly king checks possible moves of enemy king
         (which in turn would check possible moves of the friendly king).
@@ -115,18 +140,19 @@ class GameMoves:
         locations_to_check = [chr(c) + str(r) for r in row_range for c in col_range]
 
         # Simplified estimate of enemy king moves
-        moves = list()
+        # TODO: Improve so it correctly shows spots that are blocked by friendly pieces or enemy king's range
+        moves = set()
         for new_location in locations_to_check:
             try:
                 board[new_location]
             except KeyError:  # new_location is out of range of the board
                 continue
             else:
-                moves.append(new_location)
+                moves.add(new_location)
         return moves
 
     @staticmethod
-    def _king_moves(board, piece, location):
+    def _king_moves(board: GameBoard, piece: GamePiece, location: Location) -> Locations:
         """
         Moves allowed by the king
         """
@@ -141,54 +167,62 @@ class GameMoves:
 
         # determine all places the enemy can attack
         enemy_color = 'black' if piece.color == 'white' else 'white'
-        all_enemy_moves = GameMoves.get_enemy_moves(board, enemy_color)
+        all_enemy_attacks = GameMoves.get_all_attacks(board, enemy_color, simple_king=True)
 
         # determine the valid moves
-        moves = list()
+        moves = set()
         for new_location in locations_to_check:
             try:
                 board[new_location]
             except KeyError:  # new_location is out of range of the board
                 continue
 
-            if new_location not in all_enemy_moves:
+            if new_location not in all_enemy_attacks:
                 # new_location must not be attackable by enemy
                 if board[new_location] is None or board[new_location].color != piece.color:
                     # new_location must either be empty or occupied by enemy
-                    moves.append(new_location)
+                    moves.add(new_location)
+
+        # Check for castling
+        moves.update(GameMoves._castle_moves(board, piece, location))
+        return moves
+
+    @staticmethod
+    def _castle_moves(board: GameBoard, piece: GamePiece, location: Location) -> Locations:
+        """
+        Castle moves allowed by the king.
+        """
+        # king's current location
+        col = ord(location[0])
+        row = int(location[1])
 
         # TODO: Check for castling
         # TODO: determine if king is in check
         if not piece.has_moved:
             left_rook = board['A' + str(row)]
-            # right_rook = board['H' + str(row)]
-        if left_rook is not None and left_rook.color == piece.color and left_rook.has_moved is False:
-            # rook can castle
-            pass
-        # if piece.color == 'white' and not piece.has_moved:  # check if white king can castle
-        #     if board['A1'] is not None and not board['A1'].has_moved:
-        #         # rook in A1 that hasn't moved
-        #         if 'A3' not in all_enemy_moves and 'A4' not in all_enemy_moves:
-        #             # king cannot be in check
-        #             moves.append('A3')
-        #     if board['A8']
-        # elif piece.color == 'black' and not piece.has_moved:  # check if black king can castle
-        #     pass
+            right_rook = board['H' + str(row)]
+        for rook in [left_rook, right_rook]:
+            if rook and rook.color == piece.color and not rook.has_moved:
+                # Rook can castle.
+                # Verify no blocking pieces
+                # Verify King doesn't pass through check.
+                # Verify King is not currently in check
+                pass
+        moves = set()
         return moves
 
     @staticmethod
-    def _queen_moves(board, piece, location):
+    def _queen_moves(board: GameBoard, piece: GamePiece, location: Location) -> Locations:
         """
         Moves allowed by a queen
         """
         rook_moves = GameMoves._rook_moves(board, piece, location)
         bishop_moves = GameMoves._bishop_moves(board, piece, location)
-        queen_moves = list(set(rook_moves + bishop_moves))
-
+        queen_moves = rook_moves | bishop_moves  # union
         return queen_moves
 
     @staticmethod
-    def _rook_moves(board, piece, location):
+    def _rook_moves(board: GameBoard, piece: GamePiece, location: Location) -> Locations:
         """
         Moves allowed by a rook
         """
@@ -197,7 +231,7 @@ class GameMoves:
         row = int(location[1])
 
         # possible moves
-        moves = list()
+        moves = set()
         directions_to_check = {
             'right': lambda x: '%c%s' % (col + x, row),
             'left': lambda x: '%c%s' % (col - x, row),
@@ -208,9 +242,9 @@ class GameMoves:
             for i in range(1, 8):  # a rook can move between 1 and 7 spaces at most
                 new_location = move_rook(i)
                 if new_location in board.keys() and board[new_location] is None:
-                    moves.append(new_location)
+                    moves.add(new_location)
                 elif new_location in board.keys() and board[new_location].color != piece.color:
-                    moves.append(new_location)
+                    moves.add(new_location)
                     break
                 else:
                     break
@@ -218,7 +252,7 @@ class GameMoves:
         return moves
 
     @staticmethod
-    def _bishop_moves(board, piece, location):
+    def _bishop_moves(board: GameBoard, piece: GamePiece, location: Location) -> Locations:
         """
         Moves allowed by a bishop
         """
@@ -227,7 +261,7 @@ class GameMoves:
         row = int(location[1])
 
         # possible moves
-        moves = list()
+        moves = set()
         directions_to_check = {
             'upper-right': lambda x: '%c%s' % (col + x, row + x),
             'lower-right': lambda x: '%c%s' % (col + x, row - x),
@@ -238,9 +272,9 @@ class GameMoves:
             for i in range(1, 8):  # a bishop can move between 1 and 7 spaces at most
                 new_location = move_bishop(i)
                 if new_location in board.keys() and board[new_location] is None:
-                    moves.append(new_location)
+                    moves.add(new_location)
                 elif new_location in board.keys() and board[new_location].color != piece.color:
-                    moves.append(new_location)
+                    moves.add(new_location)
                     break
                 else:
                     break
@@ -248,7 +282,7 @@ class GameMoves:
         return moves
 
     @staticmethod
-    def _knight_moves(board, piece, location):
+    def _knight_moves(board: GameBoard, piece: GamePiece, location: Location) -> Locations:
         """
         Moves allowed by a knight.
         """
@@ -257,7 +291,7 @@ class GameMoves:
         row = int(location[1])
 
         # possible moves
-        moves = [
+        moves = {
             '%c%s' % (col - 1, row + 2),  # upper left
             '%c%s' % (col + 1, row + 2),  # upper right
             '%c%s' % (col + 2, row + 1),  # right upper
@@ -266,7 +300,7 @@ class GameMoves:
             '%c%s' % (col - 1, row - 2),  # lower left
             '%c%s' % (col - 2, row - 1),  # left lower
             '%c%s' % (col - 2, row + 1),  # left upper
-        ]
+        }  # type: Locations
 
         # verify possible move is on the board and not occupied by friendly piece
         for location in moves.copy():
@@ -278,7 +312,7 @@ class GameMoves:
         return moves
 
     @staticmethod
-    def _pawn_moves(board, piece, location):
+    def _pawn_moves(board: GameBoard, piece: GamePiece, location: Location) -> Locations:
         """
         Moves allowed by a pawn
         """
@@ -290,25 +324,24 @@ class GameMoves:
         else:
             direction = -1
 
-        moves = list()
+        moves = set()
 
         # check moving forward 1 space
         new_location = col + str(int(row) + direction)
         if board[new_location] is None:
-            moves.append(new_location)
+            moves.add(new_location)
 
             # check moving forward 2 spaces
             if not piece.has_moved:
                 new_location = col + str(int(row) + 2 * direction)
                 if board[new_location] is None:
-                    moves.append(new_location)
+                    moves.add(new_location)
 
         # check attacks
-        moves.extend(GameMoves._pawn_attack_moves(board, piece, location))
-        return moves
+        return moves.union(GameMoves._pawn_attack_moves(board, piece, location))
 
     @staticmethod
-    def _pawn_attack_moves(board, piece, location):
+    def _pawn_attack_moves(board: GameBoard, piece: GamePiece, location: Location) -> Locations:
         """
         Attack moves allowed by a pawn.
         """
@@ -320,7 +353,7 @@ class GameMoves:
         else:
             direction = -1
 
-        moves = list()
+        moves = set()
 
         # check attacks
         attack_cols = [chr(ord(col) - 1), chr(ord(col) + 1)]
@@ -334,8 +367,8 @@ class GameMoves:
                 pass  # left side attack is off the board
             else:
                 if board[new_location] is not None and board[new_location].color != piece.color:
-                    moves.append(new_location)
+                    moves.add(new_location)
                 elif new_location == board.en_passant:
                     # checks en passant
-                    moves.append(new_location)
+                    moves.add(new_location)
         return moves

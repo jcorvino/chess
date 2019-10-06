@@ -1,6 +1,11 @@
 import re
+from typing import Set
 from copy import deepcopy
 from .pieces import King, Queen, Rook, Bishop, Knight, Pawn
+
+Location = str
+Color = str
+Locations = Set[Location]
 
 
 class GameBoard(dict):
@@ -19,7 +24,7 @@ class GameBoard(dict):
             Rook: ('A1', 'H1',),
             Bishop: ('C1', 'F1',),
             Knight: ('B1', 'G1',),
-            Pawn: (i + '2' for i in cols),
+            Pawn: set(i + '2' for i in cols),
         },
         'black': {
             King: ('E8',),
@@ -27,7 +32,7 @@ class GameBoard(dict):
             Rook: ('A8', 'H8',),
             Bishop: ('C8', 'F8',),
             Knight: ('B8', 'G8',),
-            Pawn: (i + '7' for i in cols),
+            Pawn: set(i + '7' for i in cols),
         }
     }
 
